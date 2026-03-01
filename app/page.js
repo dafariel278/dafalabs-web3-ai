@@ -16,7 +16,7 @@ export default function Home() {
   const [isThinking, setIsThinking] = useState(false);
   const [topCoins, setTopCoins] = useState([]);
 
-  // Boot screen
+  // Boot
   useEffect(() => {
     setTimeout(() => {
       setBooting(false);
@@ -24,13 +24,13 @@ export default function Home() {
         {
           role: "agent",
           content:
-            "DAFALABS Web3 Intelligence Agent online.\nMonitoring global crypto liquidity & market structure.",
+            "DAFALABS Web3 Intelligence Agent online.\nMonitoring global liquidity, smart contracts, and ecosystem growth.",
         },
       ]);
     }, 2000);
   }, []);
 
-  // Fetch Top 5 Coins with Sparkline
+  // Fetch Top Coins
   useEffect(() => {
     const fetchMarket = async () => {
       try {
@@ -49,33 +49,110 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  const generateResponse = (prompt) => {
-    const lower = prompt.toLowerCase();
+  // Web3 Intelligence Engine
+  const generateResponse = async (prompt) => {
+    const trimmed = prompt.trim();
+    const lower = trimmed.toLowerCase();
+
+    // Ethereum contract detection
+    if (/^0x[a-fA-F0-9]{40}$/.test(trimmed)) {
+      try {
+        const res = await fetch(
+          `https://api.coingecko.com/api/v3/coins/ethereum/contract/${trimmed}`
+        );
+
+        if (!res.ok) {
+          return "Contract not found in CoinGecko database.";
+        }
+
+        const data = await res.json();
+
+        const marketCap = data.market_data.market_cap.usd || 0;
+        const volume = data.market_data.total_volume.usd || 0;
+
+        return `SMART CONTRACT INTELLIGENCE REPORT
+
+Token: ${data.name} (${data.symbol.toUpperCase()})
+Market Cap: $${marketCap.toLocaleString()}
+24h Volume: $${volume.toLocaleString()}
+
+Official Website:
+${data.links.homepage[0] || "N/A"}
+
+Twitter:
+https://twitter.com/${data.links.twitter_screen_name || "N/A"}
+
+Preliminary Risk Profile:
+• Market Presence: ${marketCap > 100000000 ? "Established" : "Early Stage"}
+• Liquidity Strength: ${volume > 1000000 ? "Healthy" : "Low"}
+• Volatility Tier: ${data.market_data.price_change_percentage_24h > 10 ? "High" : "Normal"}
+
+Always verify contract authenticity independently.`;
+      } catch {
+        return "Error scanning contract.";
+      }
+    }
 
     if (lower.includes("community")) {
-      return `Web3 Community Strategy:
+      return `WEB3 COMMUNITY GROWTH FRAMEWORK
 
-• Strong narrative
-• Core alpha members
-• Gamified Discord roles
-• Strategic KOL alignment`;
+Phase 1: Narrative Control
+• Clear positioning
+• Problem-solution clarity
+
+Phase 2: Core Adoption
+• Alpha user group
+• Ambassador incentives
+• Discord gamification
+
+Phase 3: Expansion
+• Strategic KOL partnerships
+• Transparent roadmap updates
+
+Long-term loyalty > short-term hype.`;
     }
 
     if (lower.includes("airdrop")) {
-      return `Airdrop Strategy:
+      return `AIRDROP INTELLIGENCE STRATEGY
 
-• Track VC-backed ecosystems
-• Engage early testnet
-• Consistent on-chain activity`;
+Platforms:
+• https://coinmarketcap.com/airdrop/
+• https://airdropalert.com/
+• https://layer3.xyz/
+• https://galxe.com/
+• https://zealy.io/
+
+Focus Areas:
+• VC-backed testnets
+• On-chain interaction
+• Governance participation
+• Consistent activity footprint
+
+Edge comes from early and consistent usage.`;
     }
 
-    return `Analyzing market signals...
+    if (lower.includes("project") || lower.includes("proyek")) {
+      return `HIGH-PROBABILITY WEB3 PROJECT BLUEPRINT
 
-Liquidity rotation detected in Layer 1 & AI narratives.
+1. Real Problem-Solution Fit
+2. Sustainable Tokenomics
+3. Strategic Investors
+4. Community Before Token
+5. Liquidity & Vesting Strategy
 
-Refine your query for deeper analysis.`;
+Execution discipline defines valuation trajectory.`;
+    }
+
+    return `DAFALABS Intelligence Ready.
+
+You may:
+• Paste smart contract address
+• Ask about community strategy
+• Ask about token launch structure
+• Ask about airdrop hunting`;
   };
 
+  // Typing effect
   const streamResponse = (text) => {
     setIsThinking(true);
     setStreamText("");
@@ -95,18 +172,20 @@ Refine your query for deeper analysis.`;
     }, 15);
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!input.trim() || isThinking) return;
-    setMessages((prev) => [...prev, { role: "user", content: input }]);
-    const response = generateResponse(input);
+
+    const userInput = input;
+    setMessages((prev) => [...prev, { role: "user", content: userInput }]);
     setInput("");
-    setTimeout(() => streamResponse(response), 600);
+
+    const response = await generateResponse(userInput);
+    streamResponse(response);
   };
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
 
-      {/* Boot Screen */}
       <AnimatePresence>
         {booting && (
           <motion.div
@@ -120,7 +199,6 @@ Refine your query for deeper analysis.`;
         )}
       </AnimatePresence>
 
-      {/* Background Glow */}
       <motion.div
         animate={{ opacity: [0.1, 0.3, 0.1] }}
         transition={{ duration: 8, repeat: Infinity }}
@@ -129,14 +207,11 @@ Refine your query for deeper analysis.`;
 
       <div className="relative z-10 p-16">
 
-        {/* Header */}
-        <h1 className="tracking-[8px] text-xl mb-10">
-          DAFALABS
-        </h1>
+        <h1 className="tracking-[8px] text-xl mb-10">DAFALABS</h1>
 
         <div className="grid grid-cols-3 gap-10">
 
-          {/* CHAT PANEL */}
+          {/* CHAT */}
           <div className="col-span-2 bg-zinc-950/80 border border-zinc-800 rounded-3xl p-8">
 
             <div className="h-[400px] overflow-y-auto mb-6 space-y-4">
@@ -173,7 +248,7 @@ Refine your query for deeper analysis.`;
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about Web3 strategy, airdrop, community..."
+                placeholder="Paste contract address or ask Web3 strategy..."
                 className="flex-1 bg-black border border-zinc-800 px-4 py-2 rounded-xl"
               />
               <button
