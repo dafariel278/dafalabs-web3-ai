@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  ResponsiveContainer,
   LineChart,
   Line,
-  ResponsiveContainer
+  Tooltip
 } from "recharts";
 
 export default function Home() {
@@ -14,10 +15,11 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [streamText, setStreamText] = useState("");
   const [isThinking, setIsThinking] = useState(false);
-  const [topCoins, setTopCoins] = useState([]);
+  const [btcData, setBtcData] = useState([]);
+  const [btcInfo, setBtcInfo] = useState(null);
   const chatEndRef = useRef(null);
 
-  // Boot
+  // Boot animation
   useEffect(() => {
     setTimeout(() => {
       setBooting(false);
@@ -25,7 +27,7 @@ export default function Home() {
         {
           role: "agent",
           content:
-            "DAFALABS Web3 Intelligence Terminal Online.\nDexScreener liquidity engine connected.",
+            "DAFALABS Web3 Intelligence Terminal Online.\nReal-time market engine connected.",
         },
       ]);
     }, 2000);
@@ -36,99 +38,43 @@ export default function Home() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamText]);
 
-  // Fetch Top Coins (market preview)
+  // Fetch BTC real-time data
   useEffect(() => {
     const fetchMarket = async () => {
       try {
-        const res = await fetch(
-          "https://api.dexscreener.com/latest/dex/pairs/ethereum/0xdac17f958d2ee523a2206206994597c13d831ec7"
+        // BTC price
+        const priceRes = await fetch(
+          "https://api.coingecko.com/api/v3/coins/bitcoin"
         );
-        const data = await res.json();
-        if (data.pairs) setTopCoins(data.pairs.slice(0, 5));
-      } catch {}
+        const priceData = await priceRes.json();
+
+        setBtcInfo({
+          price: priceData.market_data.current_price.usd,
+          change: priceData.market_data.price_change_percentage_24h,
+          volume: priceData.market_data.total_volume.usd,
+        });
+
+        // BTC chart
+        const chartRes = await fetch(
+          "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1"
+        );
+        const chartData = await chartRes.json();
+
+        const formatted = chartData.prices.map((p) => ({
+          time: p[0],
+          price: p[1],
+        }));
+
+        setBtcData(formatted);
+      } catch (err) {
+        console.error("Market fetch error", err);
+      }
     };
 
     fetchMarket();
+    const interval = setInterval(fetchMarket, 60000);
+    return () => clearInterval(interval);
   }, []);
-
-  // DexScreener Contract Scanner
-  const generateResponse = async (prompt) => {
-    const trimmed = prompt.trim();
-
-    if (/^0x[a-fA-F0-9]{40}$/.test(trimmed)) {
-      try {
-        const res = await fetch(
-          `https://api.dexscreener.com/latest/dex/tokens/${trimmed}`
-        );
-
-        const data = await res.json();
-
-        if (!data.pairs || data.pairs.length === 0) {
-          return "No liquidity data found on DexScreener.";
-        }
-
-        const pair = data.pairs[0];
-
-        return `DEX LIQUIDITY INTELLIGENCE REPORT
-
-Token: ${pair.baseToken.name} (${pair.baseToken.symbol})
-Chain: ${pair.chainId}
-DEX: ${pair.dexId}
-
-Price: $${pair.priceUsd}
-24h Volume: $${pair.volume.h24?.toLocaleString()}
-Liquidity: $${pair.liquidity.usd?.toLocaleString()}
-
-Official Website:
-${pair.info?.websites?.[0]?.url || "N/A"}
-
-Social Media:
-Twitter: ${pair.info?.socials?.find(s => s.type === "twitter")?.url || "N/A"}
-Telegram: ${pair.info?.socials?.find(s => s.type === "telegram")?.url || "N/A"}
-
-Risk Indicators:
-• Liquidity Depth: ${pair.liquidity.usd > 1000000 ? "Strong" : "Low"}
-• Volume Activity: ${pair.volume.h24 > 1000000 ? "Active" : "Weak"}
-
-Always verify contract authenticity independently.`;
-      } catch {
-        return "DexScreener API error.";
-      }
-    }
-
-    if (trimmed.toLowerCase().includes("community")) {
-      return `WEB3 COMMUNITY DOMINATION FRAMEWORK
-
-1. Narrative Authority
-2. Core Alpha Users
-3. Ambassador Incentives
-4. Token Utility Clarity
-5. Consistent Transparency
-
-Community strength defines token longevity.`;
-    }
-
-    if (trimmed.toLowerCase().includes("airdrop")) {
-      return `AIRDROP INTELLIGENCE SOURCES
-
-• https://layer3.xyz
-• https://galxe.com
-• https://zealy.io
-• https://coinmarketcap.com/airdrop/
-
-Focus on:
-• VC-backed ecosystems
-• Testnet usage
-• Governance activity`;
-    }
-
-    return `DAFALABS Intelligence Ready.
-
-You may:
-• Paste smart contract address
-• Ask about Web3 growth strategy
-• Ask about airdrop hunting`;
-  };
 
   // Typing effect
   const streamResponse = (text) => {
@@ -157,8 +103,7 @@ You may:
     setMessages((prev) => [...prev, { role: "user", content: userInput }]);
     setInput("");
 
-    const response = await generateResponse(userInput);
-    streamResponse(response);
+    streamResponse("Processing intelligence request...");
   };
 
   return (
@@ -189,34 +134,21 @@ You may:
 
         <div className="grid md:grid-cols-3 gap-8">
 
+          {/* CHAT */}
           <div className="md:col-span-2 bg-zinc-950/80 border border-zinc-800 rounded-3xl p-6">
 
             <div className="h-[400px] overflow-y-auto mb-6 space-y-4">
               {messages.map((msg, index) => (
-                <div key={index} className={msg.role === "user" ? "text-right" : "text-left"}>
-                  <div
-                    className={`inline-block px-4 py-3 rounded-2xl border whitespace-pre-line ${
-                      msg.role === "user"
-                        ? "bg-white text-black border-white"
-                        : "bg-zinc-900 border-zinc-800"
-                    }`}
-                  >
+                <div key={index} className="text-left">
+                  <div className="inline-block px-4 py-3 rounded-2xl border bg-zinc-900 border-zinc-800 whitespace-pre-line">
                     {msg.content}
                   </div>
                 </div>
               ))}
 
               {isThinking && (
-                <div>
-                  <div className="inline-block px-4 py-3 rounded-2xl border bg-zinc-900 border-zinc-800 whitespace-pre-line">
-                    {streamText}
-                    <motion.span
-                      animate={{ opacity: [0, 1, 0] }}
-                      transition={{ duration: 1, repeat: Infinity }}
-                    >
-                      ▌
-                    </motion.span>
-                  </div>
+                <div className="inline-block px-4 py-3 rounded-2xl border bg-zinc-900 border-zinc-800">
+                  {streamText}
                 </div>
               )}
 
@@ -232,11 +164,52 @@ You may:
             />
           </div>
 
-          <div className="bg-zinc-950/80 border border-zinc-800 rounded-3xl p-6">
-            <h3 className="text-zinc-400 mb-4">Liquidity Engine</h3>
-            <p className="text-sm text-zinc-500">
-              DexScreener real-time contract intelligence enabled.
-            </p>
+          {/* MARKET TERMINAL */}
+          <div className="bg-zinc-950/80 border border-zinc-800 rounded-3xl p-6 space-y-6">
+
+            <h3 className="text-zinc-400">Market Terminal</h3>
+
+            {btcInfo && (
+              <>
+                <div>
+                  <p className="text-lg font-semibold">
+                    BTC — ${btcInfo.price.toLocaleString()}
+                  </p>
+                  <p
+                    className={
+                      btcInfo.change > 0
+                        ? "text-green-400 text-sm"
+                        : "text-red-400 text-sm"
+                    }
+                  >
+                    {btcInfo.change.toFixed(2)}%
+                  </p>
+                  <p className="text-zinc-500 text-xs">
+                    Volume: ${btcInfo.volume.toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="w-full h-40">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={btcData}>
+                      <Tooltip />
+                      <Line
+                        type="monotone"
+                        dataKey="price"
+                        stroke={btcInfo.change > 0 ? "#22c55e" : "#ef4444"}
+                        dot={false}
+                        strokeWidth={2}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <p className="text-xs text-zinc-600">
+                  Source: CoinGecko API (Real-time 60s refresh)
+                </p>
+              </>
+            )}
+
           </div>
 
         </div>
