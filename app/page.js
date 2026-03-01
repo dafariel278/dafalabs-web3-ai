@@ -3,10 +3,15 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ResponsiveContainer,
-  LineChart,
+  ComposedChart,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  Bar,
   Line,
-  Tooltip
+  ResponsiveContainer
 } from "recharts";
 
 export default function Home() {
@@ -27,7 +32,7 @@ export default function Home() {
         {
           role: "agent",
           content:
-            "DAFALABS Web3 Intelligence Terminal Online.\nReal-time market engine connected.",
+            "DAFALABS Web3 Intelligence Terminal Online.\nReal-time market engine connected with OHLC data.",
         },
       ]);
     }, 2000);
@@ -42,7 +47,7 @@ export default function Home() {
   useEffect(() => {
     const fetchMarket = async () => {
       try {
-        // BTC price
+        // BTC price and data
         const priceRes = await fetch(
           "https://api.coingecko.com/api/v3/coins/bitcoin"
         );
@@ -54,15 +59,18 @@ export default function Home() {
           volume: priceData.market_data.total_volume.usd,
         });
 
-        // BTC chart
+        // BTC OHLC data (Candlestick data)
         const chartRes = await fetch(
-          "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1"
+          "https://api.coingecko.com/api/v3/coins/bitcoin/ohlc?vs_currency=usd&days=1"
         );
         const chartData = await chartRes.json();
 
-        const formatted = chartData.prices.map((p) => ({
-          time: p[0],
-          price: p[1],
+        const formatted = chartData.map((c) => ({
+          time: new Date(c[0]).toLocaleTimeString(),
+          open: c[1],
+          high: c[2],
+          low: c[3],
+          close: c[4],
         }));
 
         setBtcData(formatted);
@@ -189,18 +197,30 @@ export default function Home() {
                   </p>
                 </div>
 
-                <div className="w-full h-40">
+                <div className="w-full h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={btcData}>
+                    <ComposedChart
+                      data={btcData}
+                      margin={{
+                        top: 20,
+                        right: 30,
+                        left: 20,
+                        bottom: 40,
+                      }}
+                    >
+                      <XAxis dataKey="time" />
+                      <YAxis />
                       <Tooltip />
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <Legend />
+                      <Bar dataKey="open" fill="#8884d8" barSize={5} />
                       <Line
                         type="monotone"
-                        dataKey="price"
-                        stroke={btcInfo.change > 0 ? "#22c55e" : "#ef4444"}
-                        dot={false}
+                        dataKey="close"
+                        stroke="#82ca9d"
                         strokeWidth={2}
                       />
-                    </LineChart>
+                    </ComposedChart>
                   </ResponsiveContainer>
                 </div>
 
