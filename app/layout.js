@@ -1,3 +1,5 @@
+import "./globals.css";
+
 export const metadata = {
   title: "DAFALABS Web3 AI",
   description: "Web3 Intelligence Agent"
