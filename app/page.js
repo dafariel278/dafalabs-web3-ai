@@ -1,7 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  LineChart,
+  Line,
+  ResponsiveContainer
+} from "recharts";
 
 export default function Home() {
   const [booting, setBooting] = useState(true);
@@ -9,10 +14,9 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [streamText, setStreamText] = useState("");
   const [isThinking, setIsThinking] = useState(false);
-  const [marketData, setMarketData] = useState(null);
-  const chatEndRef = useRef(null);
+  const [topCoins, setTopCoins] = useState([]);
 
-  // Boot animation
+  // Boot screen
   useEffect(() => {
     setTimeout(() => {
       setBooting(false);
@@ -20,73 +24,56 @@ export default function Home() {
         {
           role: "agent",
           content:
-            "DAFALABS Web3 Intelligence Agent online.\nMonitoring on-chain signals and crypto market conditions.",
+            "DAFALABS Web3 Intelligence Agent online.\nMonitoring global crypto liquidity & market structure.",
         },
       ]);
     }, 2000);
   }, []);
 
-  // Auto scroll
+  // Fetch Top 5 Coins with Sparkline
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamText]);
-
-  // LIVE MARKET DATA
-  useEffect(() => {
-    const fetchMarketData = async () => {
+    const fetchMarket = async () => {
       try {
-        const priceRes = await fetch(
-          "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true"
+        const res = await fetch(
+          "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=5&page=1&sparkline=true"
         );
-        const priceData = await priceRes.json();
-
-        const fearRes = await fetch("https://api.alternative.me/fng/");
-        const fearData = await fearRes.json();
-
-        setMarketData({
-          btc: priceData.bitcoin.usd,
-          btcChange: priceData.bitcoin.usd_24h_change,
-          eth: priceData.ethereum.usd,
-          ethChange: priceData.ethereum.usd_24h_change,
-          fear: fearData.data[0].value,
-        });
+        const data = await res.json();
+        setTopCoins(data);
       } catch (err) {
-        console.error("Market API Error:", err);
+        console.error("Market API error:", err);
       }
     };
 
-    fetchMarketData();
-    const interval = setInterval(fetchMarketData, 60000);
+    fetchMarket();
+    const interval = setInterval(fetchMarket, 60000);
     return () => clearInterval(interval);
   }, []);
 
   const generateResponse = (prompt) => {
     const lower = prompt.toLowerCase();
 
-    if (lower.includes("komunitas") || lower.includes("community")) {
+    if (lower.includes("community")) {
       return `Web3 Community Strategy:
 
-• Strong narrative positioning
-• Core alpha believers
-• Discord gamification
-• KOL alignment
-• Transparent roadmap`;
+• Strong narrative
+• Core alpha members
+• Gamified Discord roles
+• Strategic KOL alignment`;
     }
 
     if (lower.includes("airdrop")) {
       return `Airdrop Strategy:
 
 • Track VC-backed ecosystems
-• Use testnet early
-• Interact consistently
-• Multi-wallet strategy`;
+• Engage early testnet
+• Consistent on-chain activity`;
     }
 
-    return `Analyzing market structure...
+    return `Analyzing market signals...
 
-Infrastructure & AI narratives strengthening.
+Liquidity rotation detected in Layer 1 & AI narratives.
 
-Provide a more specific query.`;
+Refine your query for deeper analysis.`;
   };
 
   const streamResponse = (text) => {
@@ -180,8 +167,6 @@ Provide a more specific query.`;
                   </div>
                 </div>
               )}
-
-              <div ref={chatEndRef} />
             </div>
 
             <div className="flex gap-4">
@@ -201,39 +186,53 @@ Provide a more specific query.`;
           </div>
 
           {/* MARKET PANEL */}
-          <div className="bg-zinc-950/80 border border-zinc-800 rounded-3xl p-8 space-y-4">
-            <h3 className="text-zinc-400 mb-4">Market Signals</h3>
+          <div className="bg-zinc-950/80 border border-zinc-800 rounded-3xl p-6 space-y-6">
+            <h3 className="text-zinc-400">Top Market Coins</h3>
 
-            {marketData ? (
-              <>
-                <p>
-                  BTC: ${marketData.btc.toLocaleString()}{" "}
-                  <span
-                    className={
-                      marketData.btcChange > 0
-                        ? "text-green-400"
-                        : "text-red-400"
-                    }
-                  >
-                    ({marketData.btcChange.toFixed(2)}%)
-                  </span>
-                </p>
+            {topCoins.length > 0 ? (
+              topCoins.map((coin) => (
+                <div key={coin.id} className="flex items-center justify-between">
 
-                <p>
-                  ETH: ${marketData.eth.toLocaleString()}{" "}
-                  <span
-                    className={
-                      marketData.ethChange > 0
-                        ? "text-green-400"
-                        : "text-red-400"
-                    }
-                  >
-                    ({marketData.ethChange.toFixed(2)}%)
-                  </span>
-                </p>
+                  <div>
+                    <p className="font-medium">
+                      {coin.symbol.toUpperCase()} — ${coin.current_price.toLocaleString()}
+                    </p>
+                    <p
+                      className={
+                        coin.price_change_percentage_24h > 0
+                          ? "text-green-400 text-sm"
+                          : "text-red-400 text-sm"
+                      }
+                    >
+                      {coin.price_change_percentage_24h.toFixed(2)}%
+                    </p>
+                  </div>
 
-                <p>Fear & Greed Index: {marketData.fear}</p>
-              </>
+                  <div className="w-24 h-10">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={coin.sparkline_in_7d.price.map((p, i) => ({
+                          price: p,
+                          index: i,
+                        }))}
+                      >
+                        <Line
+                          type="monotone"
+                          dataKey="price"
+                          stroke={
+                            coin.price_change_percentage_24h > 0
+                              ? "#22c55e"
+                              : "#ef4444"
+                          }
+                          dot={false}
+                          strokeWidth={2}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                </div>
+              ))
             ) : (
               <p className="text-zinc-500">Loading market data...</p>
             )}
