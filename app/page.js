@@ -84,33 +84,6 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  // Risk Scoring Engine
-  const analyzeRisk = (data) => {
-    const liquidity = data.liquidity.usd;
-    const volume = data.volume.h24;
-    const priceChange = data.price_change_percentage_24h;
-
-    let riskScore = "Medium";
-
-    if (liquidity > 1000000 && volume > 1000000 && Math.abs(priceChange) < 5) {
-      riskScore = "Low";
-    } else if (liquidity < 500000 || volume < 500000 || Math.abs(priceChange) > 20) {
-      riskScore = "High";
-    }
-
-    return `Risk Assessment: ${riskScore}`;
-  };
-
-  // Whale Tracking
-  const checkWhaleTransactions = (data) => {
-    const volume = data.pairs[0].volume.h24;
-
-    if (volume > 1000000) {
-      return `🚨 ALERT: Whale detected! Large transaction volume: $${volume.toLocaleString()}`;
-    }
-    return "No whale activity detected.";
-  };
-
   // Typing effect
   const streamResponse = (text) => {
     setIsThinking(true);
@@ -150,7 +123,6 @@ export default function Home() {
   const generateResponse = async (prompt) => {
     const trimmed = prompt.trim().toLowerCase();
 
-    // CONTRACT SCAN
     if (/^0x[a-fA-F0-9]{40}$/.test(prompt.trim())) {
       try {
         const res = await fetch(
@@ -203,17 +175,25 @@ Always validate contract from official sources before capital allocation.`;
 
     // COMMUNITY STRATEGY
     if (trimmed.includes("community")) {
-      return `🧠 WEB3 COMMUNITY ARCHITECTURE
+      return `🧠 WEB3 COMMUNITY STRATEGY
 
-Phase 1 — Narrative Positioning
-Phase 2 — Core Alpha Group
-Phase 3 — Strategic Amplification
+Phase 1 — Narrative Control:
+• Define positioning
+• Build conviction
+• Communicate mission clearly
+
+Phase 2 — Core Believers:
+• Private alpha channels
+• Ambassador program
+• Incentivized engagement
+
+Phase 3 — Expansion:
+• Strategic KOL alignment
+• Consistent roadmap updates
+• Transparent communication
 
 Key Principle:
-Community is liquidity defense, not marketing.
-
-Professional Insight:
-Trust compounds faster than hype.`;
+Community is liquidity defense, not marketing.`;
     }
 
     // TOKEN PROJECT STRATEGY
@@ -289,15 +269,6 @@ Ask with precision for deeper analysis.`;
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
-
-      {/* Animated Background Glow */}
-      <motion.div
-        animate={{ opacity: [0.1, 0.25, 0.1], scale: [1, 1.15, 1] }}
-        transition={{ duration: 12, repeat: Infinity }}
-        className="absolute -top-60 -left-60 w-[900px] h-[900px] bg-white/10 rounded-full blur-3xl"
-      />
-
-      {/* Boot Screen */}
       <AnimatePresence>
         {booting && (
           <motion.div
@@ -317,15 +288,18 @@ Ask with precision for deeper analysis.`;
         )}
       </AnimatePresence>
 
-      <div className="relative z-10 p-6 md:p-16 max-w-6xl mx-auto">
+      <motion.div
+        animate={{ opacity: [0.1, 0.25, 0.1], scale: [1, 1.15, 1] }}
+        transition={{ duration: 12, repeat: Infinity }}
+        className="absolute -top-60 -left-60 w-[900px] h-[900px] bg-white/10 rounded-full blur-3xl"
+      />
 
+      <div className="relative z-10 p-6 md:p-16 max-w-6xl mx-auto">
         <h1 className="tracking-[0.4em] text-2xl mb-12 font-light">
           DAFALABS
         </h1>
 
         <div className="bg-zinc-950/70 backdrop-blur-2xl border border-zinc-800 rounded-3xl p-8 shadow-[0_0_80px_rgba(255,255,255,0.05)]">
-
-          {/* Chat Area */}
           <div className="h-[420px] overflow-y-auto space-y-6 mb-8 pr-2">
             {messages.map((msg, index) => (
               <motion.div
@@ -366,7 +340,6 @@ Ask with precision for deeper analysis.`;
             <div ref={chatEndRef} />
           </div>
 
-          {/* Input Area */}
           <div className="flex gap-4">
             <input
               value={input}
@@ -382,7 +355,6 @@ Ask with precision for deeper analysis.`;
               Send
             </button>
           </div>
-
         </div>
       </div>
     </div>
