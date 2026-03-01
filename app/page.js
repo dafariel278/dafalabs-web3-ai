@@ -32,7 +32,7 @@ export default function Home() {
         {
           role: "agent",
           content:
-            "DAFALABS Web3 Intelligence Terminal Online.\nReal-time market engine connected with OHLC data.",
+            "🧠 DAFALABS Web3 Intelligence Terminal Online.\nReal-time market engine connected with OHLC data.",
         },
       ]);
     }, 2000);
@@ -47,7 +47,7 @@ export default function Home() {
   useEffect(() => {
     const fetchMarket = async () => {
       try {
-        // BTC price and data
+        // Fetch BTC price and data
         const priceRes = await fetch(
           "https://api.coingecko.com/api/v3/coins/bitcoin"
         );
@@ -59,7 +59,7 @@ export default function Home() {
           volume: priceData.market_data.total_volume.usd,
         });
 
-        // BTC OHLC data (Candlestick data)
+        // Fetch BTC OHLC data (Candlestick data)
         const chartRes = await fetch(
           "https://api.coingecko.com/api/v3/coins/bitcoin/ohlc?vs_currency=usd&days=1"
         );
@@ -106,7 +106,7 @@ export default function Home() {
     const volume = data.pairs[0].volume.h24;
 
     if (volume > 1000000) {
-      return `ALERT: Whale detected! Large transaction volume: $${volume.toLocaleString()}`;
+      return `🚨 ALERT: Whale detected! Large transaction volume: $${volume.toLocaleString()}`;
     }
     return "No whale activity detected.";
   };
@@ -143,65 +143,162 @@ export default function Home() {
 
   // Generate response for contract and queries
   const generateResponse = async (prompt) => {
-    const trimmed = prompt.trim();
+    const trimmed = prompt.trim().toLowerCase();
 
-    if (/^0x[a-fA-F0-9]{40}$/.test(trimmed)) {
+    // CONTRACT SCAN
+    if (/^0x[a-fA-F0-9]{40}$/.test(prompt.trim())) {
       try {
-        // Contract analysis
-        const contractRes = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${trimmed}`);
-        const contractData = await contractRes.json();
-        const riskScore = analyzeRisk(contractData.pairs[0]);
-        const whaleAlert = checkWhaleTransactions(contractData);
+        const res = await fetch(
+          `https://api.dexscreener.com/latest/dex/tokens/${prompt}`
+        );
+        const data = await res.json();
 
-        return `
-          Token: ${contractData.pairs[0].baseToken.name} (${contractData.pairs[0].baseToken.symbol})
-          Liquidity: $${contractData.pairs[0].liquidity.usd}
-          Volume (24h): $${contractData.pairs[0].volume.h24}
-          Risk Assessment: ${riskScore}
-          ${whaleAlert}
-        `;
-      } catch (err) {
-        return "Error fetching contract data.";
+        if (!data.pairs || data.pairs.length === 0) {
+          return `No liquidity data detected on DexScreener.
+
+Recommendation:
+• Verify chain
+• Confirm contract authenticity
+• Check official website manually`;
+        }
+
+        const pair = data.pairs[0];
+
+        return `🧠 DAFALABS CONTRACT INTELLIGENCE REPORT
+
+Executive Summary:
+${pair.baseToken.name} (${pair.baseToken.symbol}) is actively traded on ${pair.dexId} (${pair.chainId}).
+
+Market Metrics:
+• Price: $${pair.priceUsd}
+• 24h Volume: $${pair.volume.h24?.toLocaleString()}
+• Liquidity: $${pair.liquidity.usd?.toLocaleString()}
+
+Social Presence:
+• Website: ${pair.info?.websites?.[0]?.url || "Not listed"}
+• Twitter: ${
+          pair.info?.socials?.find((s) => s.type === "twitter")?.url ||
+          "Not listed"
+        }
+• Telegram: ${pair.info?.socials?.find((s) => s.type === "telegram")?.url || "Not listed"}
+
+Liquidity Analysis:
+${
+          pair.liquidity.usd > 1000000
+            ? "Healthy liquidity structure."
+            : "Liquidity depth is limited — higher volatility risk."
+        }
+
+Professional Insight:
+Always validate contract from official sources before capital allocation.`;
+      } catch {
+        return "DexScreener intelligence engine failed.";
       }
     }
 
-    if (trimmed.toLowerCase().includes("community")) {
-      return `WEB3 COMMUNITY DOMINATION FRAMEWORK
+    // COMMUNITY STRATEGY
+    if (trimmed.includes("community")) {
+      return `🧠 WEB3 COMMUNITY STRATEGY FRAMEWORK
 
-1. Narrative Authority
-2. Core Alpha Users
-3. Ambassador Incentives
-4. Token Utility Clarity
-5. Consistent Transparency
+Executive Perspective:
+Community is not marketing — it is liquidity defense.
 
-Community strength defines token longevity.`;
+Phase 1 — Narrative Control:
+• Define positioning
+• Build conviction
+• Communicate mission clearly
+
+Phase 2 — Core Believers:
+• Private alpha channels
+• Ambassador program
+• Incentivized engagement
+
+Phase 3 — Expansion:
+• Strategic KOL alignment
+• Consistent roadmap updates
+• Transparent communication
+
+Key Principle:
+Organic trust outperforms artificial hype cycles.`;
     }
 
-    if (trimmed.toLowerCase().includes("airdrop")) {
-      return `AIRDROP INTELLIGENCE SOURCES
+    // TOKEN PROJECT STRATEGY
+    if (trimmed.includes("project") || trimmed.includes("proyek")) {
+      return `🧠 WEB3 PROJECT SUCCESS MODEL
 
+Foundation:
+1. Real problem solving
+2. Sustainable tokenomics
+3. Clear value accrual mechanism
+
+Execution:
+• VC & strategic alignment
+• Audit credibility
+• Liquidity planning
+• Vesting discipline
+
+Failure Pattern:
+Most projects fail from poor treasury management and over-emission.
+
+Professional Conclusion:
+Long-term valuation follows real utility, not narrative spikes.`;
+    }
+
+    // AIRDROP STRATEGY
+    if (trimmed.includes("airdrop")) {
+      return `🧠 AIRDROP INTELLIGENCE PLAYBOOK
+
+Primary Platforms:
 • https://layer3.xyz
 • https://galxe.com
 • https://zealy.io
 • https://coinmarketcap.com/airdrop/
 
-Focus on:
-• VC-backed ecosystems
-• Testnet usage
-• Governance activity`;
+Strategic Approach:
+1. Focus on VC-backed ecosystems
+2. Interact consistently (bridge, swap, vote)
+3. Participate in governance
+4. Maintain on-chain footprint
+
+Edge Strategy:
+Consistency > multi-wallet spam.
+
+Airdrops reward usage history, not speculation.`;
     }
 
-    return `DAFALABS Intelligence Ready.
+    // MARKET ANALYSIS
+    if (trimmed.includes("market") || trimmed.includes("bull") || trimmed.includes("bear")) {
+      return `🧠 MARKET STRUCTURE ANALYSIS
 
-You may:
-• Paste smart contract address
-• Ask about Web3 growth strategy
-• Ask about airdrop hunting`;
+Current Environment:
+Liquidity rotating toward high-conviction narratives.
+
+Indicators:
+• Stablecoin inflow increasing
+• BTC dominance stabilizing
+• AI & infrastructure sectors gaining attention
+
+Macro Insight:
+Market cycles reward builders before speculators.
+
+Professional View:
+Focus on fundamentals during volatility expansion phases.`;
+    }
+
+    return `🧠 DAFALABS WEB3 INTELLIGENCE READY
+
+Capabilities:
+• Contract liquidity analysis
+• Web3 growth strategy
+• Token launch modeling
+• Airdrop intelligence
+• Market structure insight
+
+Ask with precision for deeper analysis.`;
   };
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
-
       <AnimatePresence>
         {booting && (
           <motion.div
@@ -222,14 +319,10 @@ You may:
       />
 
       <div className="relative z-10 p-6 md:p-16">
-
         <h1 className="tracking-[8px] text-xl mb-8">DAFALABS</h1>
-
         <div className="grid md:grid-cols-3 gap-8">
-
           {/* CHAT */}
           <div className="md:col-span-2 bg-zinc-950/80 border border-zinc-800 rounded-3xl p-6">
-
             <div className="h-[400px] overflow-y-auto mb-6 space-y-4">
               {messages.map((msg, index) => (
                 <div key={index} className="text-left">
@@ -259,7 +352,6 @@ You may:
 
           {/* MARKET TERMINAL */}
           <div className="bg-zinc-950/80 border border-zinc-800 rounded-3xl p-6 space-y-6">
-
             <h3 className="text-zinc-400">Market Terminal</h3>
 
             {btcInfo && (
@@ -314,9 +406,7 @@ You may:
                 </p>
               </>
             )}
-
           </div>
-
         </div>
       </div>
     </div>
